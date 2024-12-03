@@ -11,6 +11,8 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+    <uses-feature android:name="android.hardware.opengles.autosupport" />
+    <uses-feature android:name="android.hardware.opengles" />
 
     <application
         android:allowBackup="true"
@@ -23,7 +25,7 @@
         android:theme="@style/Theme.ARCore"
         tools:targetApi="31">
         <activity
-            android:name=".ChutMarikaActivity"
+            android:name=".ARActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

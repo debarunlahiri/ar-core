@@ -8,31 +8,38 @@ import org.opencv.imgproc.Imgproc
 
 object ImageProxyToMatConverter {
     fun convert(image: Image, rotationDegrees: Int): Mat {
-        // Convert Image to byte array
-        val buffer = image.planes[0].buffer
-        val bytes = ByteArray(buffer.capacity())
-        buffer.get(bytes)
+        // Conversion logic: NV21 or YUV to Mat
+        val yBuffer = image.planes[0].buffer
+        val uBuffer = image.planes[1].buffer
+        val vBuffer = image.planes[2].buffer
 
-        // Create a Mat from the byte array
-        val mat = Mat(image.height + image.height / 2, image.width, CvType.CV_8UC1)
-        mat.put(0, 0, bytes)
+        val ySize = yBuffer.remaining()
+        val uSize = uBuffer.remaining()
+        val vSize = vBuffer.remaining()
 
-        // Convert NV21 format to RGB
-        val rgbMat = Mat()
-        Imgproc.cvtColor(mat, rgbMat, Imgproc.COLOR_YUV2RGB_NV21)
+        val nv21 = ByteArray(ySize + uSize + vSize)
+        yBuffer.get(nv21, 0, ySize)
+        vBuffer.get(nv21, ySize, vSize)
+        uBuffer.get(nv21, ySize + vSize, uSize)
 
-        // Rotate image if necessary
+        val yuvMat = Mat(image.height + image.height / 2, image.width, CvType.CV_8UC1)
+        yuvMat.put(0, 0, nv21)
+
+        val bgrMat = Mat()
+        Imgproc.cvtColor(yuvMat, bgrMat, Imgproc.COLOR_YUV2BGR_NV21)
+
+        // Rotate if needed
         if (rotationDegrees != 0) {
             val rotatedMat = Mat()
-            Core.rotate(rgbMat, rotatedMat, when (rotationDegrees) {
+            Core.rotate(bgrMat, rotatedMat, when (rotationDegrees) {
                 90 -> Core.ROTATE_90_CLOCKWISE
                 180 -> Core.ROTATE_180
                 270 -> Core.ROTATE_90_COUNTERCLOCKWISE
-                else -> Core.ROTATE_180
+                else -> return bgrMat
             })
             return rotatedMat
         }
 
-        return rgbMat
+        return bgrMat
     }
 }
